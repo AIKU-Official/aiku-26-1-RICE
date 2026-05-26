@@ -1,0 +1,22 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*.pyo
+
+# OS/editor files
+.DS_Store
+
+# Hydra, trainer, and experiment outputs
+outputs/
+runs/
+wandb/
+*.log
+
+# Model checkpoints and generated results are intentionally excluded.
+finetuned/*
+!finetuned/
+!finetuned/.gitkeep
+results/
+
+# Large local archives
+*.zip
