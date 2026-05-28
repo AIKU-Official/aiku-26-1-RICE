@@ -79,14 +79,17 @@ def compute_forget_rmu_loss(model, oracle_model, forget_inputs,
     rmu_loss = torch.tensor(0.0, device=device)
     if rmu_layers and random_vectors:
         mask = attention_mask.to(device).unsqueeze(-1).float()
+        active_hidden_count = mask.sum().clamp_min(1.0) * outputs.hidden_states[-1].shape[-1]
         for layer_idx in rmu_layers:
             h = outputs.hidden_states[layer_idx + 1].float()
             r = random_vectors[layer_idx].to(device).float()
             target = r * rmu_scale
-            rmu_loss = rmu_loss + F.mse_loss(
+            squared_error = F.mse_loss(
                 h * mask,
                 target.unsqueeze(0).unsqueeze(0).expand_as(h) * mask,
+                reduction="sum",
             )
+            rmu_loss = rmu_loss + squared_error / active_hidden_count
         rmu_loss = rmu_loss / len(rmu_layers)
 
     return gamma * forget_loss + rmu_lambda * rmu_loss

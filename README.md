@@ -19,7 +19,7 @@ unlearning_methods/
   unlearn_rice/         # proposed method: RICE
 ```
 
-RICE는 gradient-ascent forget loss, RMU hidden-state regularization, retain CE loss를 결합한 방법론입니다. 기본 설정은 `unlearning_methods/unlearn_rice/config.yaml`에 있습니다.
+RICE는 NPO forget loss, RMU hidden-state regularization, retain CE loss를 결합한 방법론입니다. 기본 설정은 `unlearning_methods/unlearn_rice/config.yaml`에 있습니다.
 
 ## Setup
 
@@ -77,10 +77,12 @@ python unlearning_methods/unlearn_grad_diff/train.py model_path=./finetuned/fine
 Run RICE:
 
 ```bash
-python unlearning_methods/unlearn_rice/train.py \
+CUDA_VISIBLE_DEVICES=0,1 python unlearning_methods/unlearn_rice/train.py \
   model_path=./finetuned/finetuned_100 \
   save_dir=./results/rice
 ```
+
+기본 RICE는 NPO reference/oracle 모델을 함께 사용하므로 visible CUDA device 2개가 필요합니다.
 
 Evaluate a model:
 
@@ -112,7 +114,7 @@ bash unlearning_methods/unlearn_rice/run_ablations.sh
 Useful GPU overrides:
 
 ```bash
-FT_GPUS=0,1 RICE_GPU=0 EVAL_GPU=0 bash scripts/run_full_pipeline.sh
+FT_GPUS=0,1 RICE_GPUS=0,1 EVAL_GPU=0 bash scripts/run_full_pipeline.sh
 NPO_GPUS=0,1 bash scripts/run_baselines.sh
 TRAIN_GPU=0 EVAL_GPU=0 bash unlearning_methods/unlearn_rice/run_ablation_ga_forget.sh
 ```
@@ -151,7 +153,7 @@ python evaluate.py \
 Small RICE training smoke test:
 
 ```bash
-python unlearning_methods/unlearn_rice/train.py \
+CUDA_VISIBLE_DEVICES=0,1 python unlearning_methods/unlearn_rice/train.py \
   model_path=./finetuned/finetuned_100 \
   save_dir=./results/smoke_rice \
   num_epochs=1 \

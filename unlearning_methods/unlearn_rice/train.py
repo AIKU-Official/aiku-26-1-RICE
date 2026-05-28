@@ -94,6 +94,11 @@ def main(cfg):
 
     needs_oracle = forget_loss_type == "npo" or retain_loss_type == "kl"
     if needs_oracle:
+        if torch.cuda.device_count() < 2:
+            raise RuntimeError(
+                "NPO/KL RICE training requires two visible CUDA devices: "
+                "cuda:0 for the trainable model and cuda:1 for the oracle model."
+            )
         print("Loading oracle model to cuda:1...")
         oracle_model = AutoModelForCausalLM.from_pretrained(
             cfg.model_path,
@@ -186,7 +191,7 @@ def main(cfg):
             )
             (alpha * retain_loss / grad_accum).backward()
             sanitize_gradients(model)
-            accum_loss_retain += retain_loss.item() / grad_accum
+            accum_loss_retain += alpha * retain_loss.item() / grad_accum
             del retain_loss
             torch.cuda.empty_cache()
 

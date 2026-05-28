@@ -14,7 +14,7 @@ FINETUNED_99="${FINETUNED_99:-./finetuned/finetuned_99}"
 FT_GPUS="${FT_GPUS:-${FT_GPU:-0}}"
 NPO_GPUS="${NPO_GPUS:-0,1}"
 GRAD_DIFF_GPU="${GRAD_DIFF_GPU:-0}"
-RICE_GPU="${RICE_GPU:-0}"
+RICE_GPUS="${RICE_GPUS:-${RICE_GPU:-0,1}}"
 EVAL_GPU="${EVAL_GPU:-0}"
 EVAL_BATCH_SIZE="${EVAL_BATCH_SIZE:-4}"
 RETAIN_EVAL_DIR="${RETAIN_EVAL_DIR:-${RESULTS_DIR}/eval_finetuned_99}"
@@ -59,8 +59,11 @@ if has_model "${RESULTS_DIR}/rice"; then
     echo "RICE model already exists: ${RESULTS_DIR}/rice"
 else
     mkdir -p "${RESULTS_DIR}/rice"
-    CUDA_VISIBLE_DEVICES="${RICE_GPU}" "${PYTHON_BIN}" unlearning_methods/unlearn_rice/train.py \
+    CUDA_VISIBLE_DEVICES="${RICE_GPUS}" "${PYTHON_BIN}" unlearning_methods/unlearn_rice/train.py \
         model_path="${FINETUNED_100}" \
+        forget_loss_type=npo \
+        retain_loss_type=ce \
+        alpha=0.5 \
         save_dir="${RESULTS_DIR}/rice" \
         > "${RESULTS_DIR}/rice/train.log" 2>&1
 fi
