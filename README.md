@@ -1,80 +1,90 @@
-# COSE461 RICE Unlearning Submission
+# RICE: Reference-guided Internal Cross-lingual Erasure for Multilingual LLM Unlearning
 
-이 저장소는 TOFU 기반 multilingual QA fine-tuning 모델에 baseline unlearning과 RICE 방법론을 적용하고 평가하기 위한 제출용 코드입니다.
+This repository contains the code and data used for the experiments in the accompanying RICE paper. It provides a reproducible pipeline for multilingual TOFU fine-tuning, unlearning, baseline comparison, and evaluation.
 
-최종 실행 흐름은 다음과 같습니다.
+RICE is a multilingual LLM unlearning method designed to remove target factual behavior while preserving non-target utility. The repository includes the proposed method, baseline methods, translated TOFU-derived datasets, and scripts for running the main experiments. Methodological details are described in the paper.
 
-```text
-TOFU fine-tune -> baseline/RICE unlearning -> evaluation
-```
-
-## Included Methods
-
-남긴 방법론은 세 가지입니다.
+## Repository Structure
 
 ```text
+config/                  Model, fine-tuning, DeepSpeed, and evaluation configs
+dataset/                 TOFU-derived multilingual datasets used by the scripts
+scripts/                 End-to-end and convenience run scripts
 unlearning_methods/
-  unlearn_npo/          # baseline: NPO
-  unlearn_grad_diff/    # baseline: Grad-Diff
-  unlearn_rice/         # proposed method: RICE
+  unlearn_rice/          RICE implementation
+  unlearn_npo/           NPO baseline
+  unlearn_grad_diff/     Grad-Diff baseline
+finetune.py              Fine-tuning entry point
+evaluate.py              Evaluation entry point
+data_module.py           Dataset formatting utilities
+utils.py                 Evaluation and aggregation utilities
+finetuned/               Generated fine-tuned checkpoints, not tracked by git
+results/                 Generated unlearning and evaluation outputs, not tracked by git
 ```
-
-RICE는 NPO forget loss, RMU hidden-state regularization, retain CE loss를 결합한 방법론입니다. 기본 설정은 `unlearning_methods/unlearn_rice/config.yaml`에 있습니다.
 
 ## Setup
 
-Python 3.10 환경에서 아래 의존성을 설치합니다.
+Use Python 3.10 with a CUDA-enabled PyTorch environment. Install the Python dependencies with:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-CUDA/PyTorch 버전은 `requirements.txt`와 `environment.yml`을 기준으로 맞춥니다. Qwen3.5-2B-Base를 기본 모델로 사용하며, 모델 체크포인트는 제출물에 포함하지 않습니다.
+The repository also includes `environment.yml` as a reference environment file.
 
-## Data
+The default model family is `qwen3_5_2b`, configured in `config/model_config.yaml`. Generated model checkpoints are not included in the repository.
 
-제출물에는 실행에 필요한 TOFU-derived 데이터만 포함합니다.
+## Data and Checkpoints
+
+The `dataset/` directory contains the local TOFU-derived multilingual splits used by the training and evaluation scripts:
 
 ```text
-dataset/full_merged_all_10_lang          # full fine-tuning
-dataset/retain99_merged_all_10_lang      # retain99 baseline fine-tuning
-dataset/forget01*                        # forget set and perturbed forget set
-dataset/retain_perturbed*                # retain evaluation
-dataset/real_authors_perturbed*          # real-author evaluation
-dataset/world_facts_perturbed*           # real-world evaluation
+dataset/full_merged_all_10_lang
+dataset/retain99_merged_all_10_lang
+dataset/forget01_*
+dataset/forget01_perturbed_*
+dataset/retain_perturbed_*
+dataset/real_authors_perturbed_*
+dataset/world_facts_perturbed_*
 ```
 
-English TOFU splits are loaded from `locuslab/TOFU` through Hugging Face `datasets`; multilingual splits are loaded from local `dataset/`.
+The scripts generate checkpoints under `finetuned/` and experiment outputs under `results/`. These directories are intentionally excluded from git except for `finetuned/.gitkeep`.
 
-## Run
+## Running Experiments
 
-Fine-tune the full model:
+Run the full fine-tuning, unlearning, and evaluation pipeline:
+
+```bash
+bash scripts/run_full_pipeline.sh
+```
+
+Useful GPU overrides:
+
+```bash
+FT_GPUS=0,1 RICE_GPUS=0,1 EVAL_GPU=0 bash scripts/run_full_pipeline.sh
+```
+
+RICE training uses a frozen oracle/reference model in addition to the trainable model, so the default RICE run expects two visible CUDA devices.
+
+Fine-tune the full-data model:
 
 ```bash
 bash scripts/run_finetune_100.sh
 ```
 
-Fine-tune the retain99 baseline model used for Forget Quality:
+Fine-tune the retain99 reference model:
 
 ```bash
 bash scripts/run_finetune_99.sh
 ```
 
-Both fine-tuning scripts support multi-GPU training through `FT_GPUS` and run evaluation after training succeeds:
+Run the baseline unlearning methods:
 
 ```bash
-FT_GPUS=0,1 bash scripts/run_finetune_100.sh
-FT_GPUS=0,1 bash scripts/run_finetune_99.sh
+bash scripts/run_baselines.sh
 ```
 
-Run baselines:
-
-```bash
-python unlearning_methods/unlearn_npo/train.py model_path=./finetuned/finetuned_100
-python unlearning_methods/unlearn_grad_diff/train.py model_path=./finetuned/finetuned_100
-```
-
-Run RICE:
+Run RICE directly:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1 python unlearning_methods/unlearn_rice/train.py \
@@ -82,9 +92,7 @@ CUDA_VISIBLE_DEVICES=0,1 python unlearning_methods/unlearn_rice/train.py \
   save_dir=./results/rice
 ```
 
-기본 RICE는 NPO reference/oracle 모델을 함께 사용하므로 visible CUDA device 2개가 필요합니다.
-
-Evaluate a model:
+Evaluate a trained or unlearned model:
 
 ```bash
 python evaluate.py \
@@ -93,54 +101,36 @@ python evaluate.py \
   retain_result_template='./results/eval_finetuned_99/{language}/eval_log_aggregated.json'
 ```
 
-Run the full submission pipeline:
-
-```bash
-bash scripts/run_full_pipeline.sh
-```
-
-Run only baseline training/evaluation:
-
-```bash
-bash scripts/run_baselines.sh
-```
-
 Run RICE ablations:
 
 ```bash
 bash unlearning_methods/unlearn_rice/run_ablations.sh
 ```
 
-Useful GPU overrides:
+## Outputs
 
-```bash
-FT_GPUS=0,1 RICE_GPUS=0,1 EVAL_GPU=0 bash scripts/run_full_pipeline.sh
-NPO_GPUS=0,1 bash scripts/run_baselines.sh
-TRAIN_GPU=0 EVAL_GPU=0 bash unlearning_methods/unlearn_rice/run_ablation_ga_forget.sh
-```
-
-## RICE Ablations
-
-RICE ablation scripts are under `unlearning_methods/unlearn_rice/`.
+The main scripts produce the following artifacts:
 
 ```text
-run_ablation_no_retain.sh     # NPO + RMU, alpha=0.0
-run_ablation_ga_forget.sh     # GA forget + RMU + retain CE
-run_ablation_all_layers.sh    # NPO + RMU on all transformer layers + retain CE
-run_ablations.sh              # runs all ablations
+finetuned/finetuned_100          Full-data fine-tuned model
+finetuned/finetuned_99           Retain99 fine-tuned reference model
+results/npo                     NPO baseline checkpoint
+results/grad_diff               Grad-Diff baseline checkpoint
+results/rice                    RICE checkpoint
+results/eval_*                  Evaluation logs, generated text, and summaries
 ```
 
-All scripts run from the repository root and write generated models/evaluation results under `./results/`.
+Evaluation outputs include per-task JSON logs and aggregate summaries. The exact files depend on the selected evaluation config and language list.
 
 ## Smoke Checks
 
-Syntax/import check:
+Run a syntax/import check:
 
 ```bash
 python -m compileall .
 ```
 
-Small evaluation smoke test:
+Run a small evaluation smoke test:
 
 ```bash
 python evaluate.py \
@@ -150,7 +140,7 @@ python evaluate.py \
   'languages=[en]'
 ```
 
-Small RICE training smoke test:
+Run a small RICE training smoke test:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0,1 python unlearning_methods/unlearn_rice/train.py \
@@ -161,20 +151,18 @@ CUDA_VISIBLE_DEVICES=0,1 python unlearning_methods/unlearn_rice/train.py \
   gradient_accumulation_steps=1
 ```
 
-## Outputs
+## Citation
 
-Model checkpoints and generated evaluation results are intentionally excluded by `.gitignore`.
+If you use this repository, please cite the accompanying paper:
 
-```text
-finetuned/
-results/
-outputs/
+```bibtex
+@misc{rice2026,
+  title = {RICE: Reference-guided Internal Cross-lingual Erasure for Multilingual LLM Unlearning},
+  note = {Manuscript},
+  year = {2026}
+}
 ```
 
-Regenerate them with the commands above.
+## License and Attribution
 
-## Attribution and License
-
-This project is based on the MIT-licensed repository [alirezafarashah/multilingual_unlearning](https://github.com/alirezafarashah/multilingual_unlearning), which builds on TOFU resources from [locuslab/tofu](https://github.com/locuslab/tofu).
-
-The original MIT license notice is preserved in `LICENSE`, with an additional modification notice for the COSE461 project changes.
+This project is based on the MIT-licensed repository `alirezafarashah/multilingual_unlearning`, which builds on TOFU resources from `locuslab/tofu`. The original MIT license notice is preserved in `LICENSE`, with an additional modification notice for the COSE461 project changes.
