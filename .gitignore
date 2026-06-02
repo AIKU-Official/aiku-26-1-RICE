@@ -16,7 +16,6 @@ wandb/
 finetuned/*
 !finetuned/
 !finetuned/.gitkeep
-results/
 
 # Large local archives
 *.zip
