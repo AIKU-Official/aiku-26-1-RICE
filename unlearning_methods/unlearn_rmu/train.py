@@ -1,7 +1,7 @@
 """End-to-end WMDP-style RMU unlearning runner for TOFU.
 
 Run from the NLP_rice root:
-    CUDA_VISIBLE_DEVICES=0,1 python unlearning_methods/unlearn_RMU/train.py \
+    CUDA_VISIBLE_DEVICES=0,1 python unlearning_methods/unlearn_rmu/train.py \
         model_path=/path/to/full_tofu_finetuned_model
 """
 
@@ -22,8 +22,8 @@ from omegaconf import OmegaConf
 from torch.utils.data import DataLoader
 from transformers import AutoModelForCausalLM, AutoTokenizer, set_seed
 
-from unlearning_methods.unlearn_RMU.dataloader import RMUForgetDataset, rmu_collator
-from unlearning_methods.unlearn_RMU.loss import compute_rmu_loss
+from unlearning_methods.unlearn_rmu.dataloader import RMUForgetDataset, rmu_collator
+from unlearning_methods.unlearn_rmu.loss import compute_rmu_loss
 from utils import get_model_identifiers_from_yaml
 
 
@@ -128,7 +128,12 @@ def set_trainable_layers(model, update_layers):
 
 def ensure_save_dir(cfg):
     save_dir = Path(resolve_project_path(cfg.save_dir))
-    if save_dir.exists() and any(save_dir.iterdir()) and not bool(cfg.overwrite_dir):
+    allowed_existing_files = {"train.log"}
+    existing_entries = set()
+    if save_dir.exists():
+        existing_entries = {entry.name for entry in save_dir.iterdir()}
+
+    if save_dir.exists() and existing_entries - allowed_existing_files and not bool(cfg.overwrite_dir):
         raise FileExistsError(
             f"save_dir already exists and is not empty: {save_dir}\n"
             "Set overwrite_dir=true or choose a new save_dir."

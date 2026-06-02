@@ -1,4 +1,4 @@
-"""Dataset and collator for grad_diff_KL unlearning."""
+"""Dataset and collator for grad_diff_kl unlearning."""
 
 import datasets
 import torch
@@ -9,7 +9,7 @@ from utils import get_model_identifiers_from_yaml
 
 
 class GradDiffKLDataset(Dataset):
-    """Return forget/retain/normal triples for grad_diff_KL training."""
+    """Return forget/retain/normal triples for grad_diff_kl training."""
 
     def __init__(self, data_path, tokenizer, model_family, max_length=512, split="forget10", language="en"):
         super().__init__()

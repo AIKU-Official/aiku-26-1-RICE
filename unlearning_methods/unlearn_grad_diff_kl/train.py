@@ -1,4 +1,4 @@
-"""End-to-end grad_diff_KL unlearning runner.
+"""End-to-end grad_diff_kl unlearning runner.
 
 Run from the repo root with:
     python unlearning_methods/unlearn_grad_diff_kl/train.py
@@ -23,7 +23,7 @@ import transformers
 from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, set_seed
 from transformers.integrations.deepspeed import deepspeed_init
 
-from evaluate_util import get_all_evals, get_dataloader
+from evaluate import get_all_evals, get_dataloader
 from unlearning_methods.unlearn_grad_diff_kl.dataloader import GradDiffKLDataset, grad_diff_kl_collator
 from unlearning_methods.unlearn_grad_diff_kl.loss import compute_grad_diff_kl_loss
 from utils import get_forget_quality, get_model_identifiers_from_yaml, get_model_utility, merge_dicts
@@ -160,6 +160,7 @@ class GradDiffKLTrainer(Trainer):
                     answer_key,
                     base_answer_key,
                     perturbed_answer_key,
+                    language=getattr(self.eval_cfg, "language", "en"),
                 )
                 eval_dataloader = self.accelerator.prepare(eval_dataloader)
                 base_eval_dataloader = self.accelerator.prepare(base_eval_dataloader)

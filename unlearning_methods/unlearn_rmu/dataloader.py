@@ -14,7 +14,7 @@ class RMUForgetDataset(Dataset):
     def __init__(self, data_path, tokenizer, model_family, max_length=512, split="forget01", language="en"):
         super().__init__()
         if language != "en":
-            raise ValueError("unlearn_RMU trains on English TOFU only. Use language=en.")
+            raise ValueError("unlearn_rmu trains on English TOFU only. Use language=en.")
 
         self.tokenizer = tokenizer
         self.max_length = max_length

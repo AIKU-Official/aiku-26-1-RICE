@@ -20,7 +20,7 @@ def _forward(model, inputs):
 
 def _reference_kl(model, oracle_model, inputs):
     if oracle_model is None:
-        raise ValueError("grad_diff_KL requires an oracle/reference model.")
+        raise ValueError("grad_diff_kl requires an oracle/reference model.")
 
     current_outputs = _forward(model, inputs)
     current_probs = F.log_softmax(current_outputs.logits, dim=-1)
