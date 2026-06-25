@@ -203,9 +203,20 @@ RICE는 영어 forget supervision만 사용했음에도 열 개 언어 평균에
 
 RICE의 평균 `Prob. Forget`은 `6.5×10^-7`까지 낮아졌고, 언어별 삭제 정답 확률도 모두 `1.5×10^-6` 미만으로 나타났습니다. 이는 영어에서 학습한 삭제 신호가 비라틴 문자를 포함한 다른 언어 질의에도 전이되었음을 보여 줍니다.
 
-![TR Forget과 Model Utility의 Pareto 비교](assets/pareto_utility.png)
-
-![TR Forget과 1-TR Retain의 Pareto 비교](assets/pareto_retain.png)
+<table>
+  <tr>
+    <td align="center">
+      <img src="assets/pareto_utility.png" alt="TR Forget과 Model Utility의 Pareto 비교" width="100%">
+    </td>
+    <td align="center">
+      <img src="assets/pareto_retain.png" alt="TR Forget과 1-TR Retain의 Pareto 비교" width="100%">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">TR Forget과 Model Utility</td>
+    <td align="center">TR Forget과 1-TR Retain</td>
+  </tr>
+</table>
 
 ## 팀원
 
